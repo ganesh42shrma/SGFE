@@ -1,7 +1,7 @@
 import axios from "axios";
 import store from "../Redux/store"; // Import your Redux store
 
-const API_URL = "https://sgbe-git-ganeshstockgaurd-ganesh42shrmas-projects.vercel.app/api/";
+const API_URL = "https://sgbe.vercel.app/api/";
 
 const axiosInstance = axios.create({
   baseURL: API_URL,
