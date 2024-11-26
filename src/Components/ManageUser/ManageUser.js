@@ -25,7 +25,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Snackbar,
   Grid,
   Typography,
   InputAdornment,
@@ -34,14 +33,13 @@ import {
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { openSnackbar, closeSnackbar } from "../../Redux/slices/snackbarSlice";
+import { openSnackbar } from "../../Redux/slices/snackbarSlice";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
 const ManageUserPage = () => {
   const user = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
-  const { open, message, severity } = useSelector((state) => state.snackbar);
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [formData, setFormData] = useState({

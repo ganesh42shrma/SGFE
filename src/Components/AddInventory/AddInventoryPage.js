@@ -24,14 +24,12 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  CircularProgress,
   Pagination,
   Snackbar,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import { useSelector } from "react-redux";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { Navigate } from "react-router-dom";
 import { Carousel } from "react-responsive-carousel";
 import { useDispatch } from "react-redux";
 import "react-responsive-carousel/lib/styles/carousel.min.css"; // Carousel styles
@@ -81,6 +79,7 @@ const AddInventoryPage = () => {
     fetchCategories();
   }, []);
 
+  console.log("Error:", errorMessage);
   useEffect(() => {
     const loadInventory = async () => {
       setLoading(true);

@@ -5,7 +5,6 @@ import {
   Typography,
   Grid,
   Box,
-  CircularProgress,
 } from "@mui/material";
 import ApexCharts from "react-apexcharts";
 import { getAllCategories } from "../../Services/categoryServices";

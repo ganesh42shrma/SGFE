@@ -12,7 +12,6 @@ import {
   TextField,
   Typography,
   Snackbar,
-  CircularProgress, // Import CircularProgress for loader
 } from "@mui/material";
 import { useSelector } from "react-redux";
 import {
