@@ -43,6 +43,8 @@ import { getCategoriesForUser } from "../../Services/categoryServices";
 import { openSnackbar, closeSnackbar } from "../../Redux/slices/snackbarSlice";
 import Lottie from "lottie-react";
 import loaderAnimation from "../../Assets/loadinglottie.json";
+import { showConfirmation } from "../../Redux/slices/confirmationSlice";
+import ConfirmationPopup from "../../UI-components/ConfirmationPopup";
 
 const AddInventoryPage = () => {
   const dispatch = useDispatch();
@@ -65,6 +67,7 @@ const AddInventoryPage = () => {
   const [editFormData, setEditFormData] = useState({});
   const [selectedItemId, setSelectedItemId] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -117,9 +120,9 @@ const AddInventoryPage = () => {
   };
 
   const handleImageUpload = (e) => {
-    const files = Array.from(e.target.files); // Convert FileList to array
+    const files = Array.from(e.target.files);
     const allowedTypes = ["image/jpeg", "image/png"];
-    const maxFileSize = 5 * 1024 * 1024; // 5MB
+    const maxFileSize = 5 * 1024 * 1024;
 
     const validFiles = files.filter(
       (file) => allowedTypes.includes(file.type) && file.size <= maxFileSize
@@ -143,18 +146,37 @@ const AddInventoryPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (formData.stock < 0) {
+      dispatch(
+        openSnackbar({
+          message: "Stock cannot be less than 0.",
+          severity: "error",
+        })
+      );
+      return;
+    }
+
+    if (formData.price < 0) {
+      dispatch(
+        openSnackbar({
+          message: "Price cannot be less than 0.",
+          severity: "error",
+        })
+      );
+      return;
+    }
+    setIsSubmitting(true);
     try {
-      const form = new FormData(); // Create FormData object to send files
-      // Append regular fields to formData
+      const form = new FormData();
+
       form.append("name", formData.name);
       form.append("category", formData.category);
       form.append("price", formData.price);
       form.append("stock", formData.stock);
       form.append("status", formData.status);
 
-      // Append images as files
       formData.images.forEach((image) => {
-        form.append("images", image); // Append each file as "images"
+        form.append("images", image);
       });
 
       await addInventoryItem(form);
@@ -180,6 +202,8 @@ const AddInventoryPage = () => {
           severity: "error",
         })
       );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -193,45 +217,59 @@ const AddInventoryPage = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    try {
-      await deleteInventoryItem(id);
-      dispatch(
-        openSnackbar({
-          message: "Item deleted successfully!",
-          severity: "success",
-        })
-      );
-      fetchInventoryItems();
-    } catch (error) {
-      if (error.response && error.response.status === 403) {
-        // Handle 403 Forbidden error
-        dispatch(
-          openSnackbar({
-            message:
-              error.response.data.message ||
-              "You don't have permission to delete this item.",
-            severity: "warning",
-          })
-        );
-      } else if (error.response && error.response.status === 404) {
-        // Handle 404 Not Found error
-        dispatch(
-          openSnackbar({
-            message: "Item not found. It might have already been deleted.",
-            severity: "info",
-          })
-        );
-      } else {
-        // Handle other errors
-        dispatch(
-          openSnackbar({
-            message: error.response?.data?.message || "Failed to delete item.",
-            severity: "error",
-          })
-        );
-      }
-    }
+  const handleDelete = (id) => {
+    dispatch(
+      showConfirmation({
+        message: "Are you sure you want to delete this item?",
+        onConfirm: async () => {
+          try {
+            await deleteInventoryItem(id);
+            dispatch(
+              openSnackbar({
+                message: "Item deleted successfully!",
+                severity: "success",
+              })
+            );
+            fetchInventoryItems();
+          } catch (error) {
+            if (error.response && error.response.status === 403) {
+              dispatch(
+                openSnackbar({
+                  message:
+                    error.response.data.message ||
+                    "You don't have permission to delete this item.",
+                  severity: "warning",
+                })
+              );
+            } else if (error.response && error.response.status === 404) {
+              dispatch(
+                openSnackbar({
+                  message:
+                    "Item not found. It might have already been deleted.",
+                  severity: "info",
+                })
+              );
+            } else {
+              dispatch(
+                openSnackbar({
+                  message:
+                    error.response?.data?.message || "Failed to delete item.",
+                  severity: "error",
+                })
+              );
+            }
+          }
+        },
+        onCancel: () => {
+          dispatch(
+            openSnackbar({
+              message: "Delete action canceled.",
+              severity: "info",
+            })
+          );
+        },
+      })
+    );
   };
 
   const handleEditOpen = (item) => {
@@ -263,7 +301,6 @@ const AddInventoryPage = () => {
       handleEditClose();
     } catch (error) {
       if (error.response?.status === 403) {
-        // Show a specific message if the user doesn't have permission
         dispatch(
           openSnackbar({
             message:
@@ -273,7 +310,6 @@ const AddInventoryPage = () => {
           })
         );
       } else {
-        // General error message
         dispatch(
           openSnackbar({
             message: "Failed to update item. Please try again.",
@@ -337,8 +373,6 @@ const AddInventoryPage = () => {
       <Typography variant="h4" gutterBottom>
         Add New Inventory
       </Typography>
-
-      {/* Preview Card */}
       <Card sx={{ mt: 3, mb: 3 }}>
         {imagePreview.length > 0 && (
           <Carousel
@@ -401,8 +435,6 @@ const AddInventoryPage = () => {
           </Typography>
         </CardContent>
       </Card>
-
-      {/* Form */}
       <Box component="form" onSubmit={handleSubmit} noValidate>
         <Grid container spacing={2}>
           <Grid item xs={12} sm={6}>
@@ -496,9 +528,13 @@ const AddInventoryPage = () => {
               </Select>
             </FormControl>
           </Grid>
-
           <Grid item xs={12} sm={6}>
-            <Button variant="contained" component="label" fullWidth>
+            <Button
+              variant="contained"
+              component="label"
+              fullWidth
+              disabled={isSubmitting}
+            >
               Upload Image
               <input
                 type="file"
@@ -510,8 +546,14 @@ const AddInventoryPage = () => {
             </Button>
           </Grid>
           <Grid item xs={12} sm={6}>
-            <Button type="submit" variant="contained" color="primary" fullWidth>
-              Add Inventory
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              fullWidth
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Adding..." : "Add Inventory"}
             </Button>
           </Grid>
         </Grid>
@@ -571,8 +613,6 @@ const AddInventoryPage = () => {
           />
         </Box>
       </Box>
-
-      {/* Edit Modal */}
       <Dialog open={isEditModalOpen} onClose={handleEditClose}>
         <DialogTitle>Edit Inventory Item</DialogTitle>
         <DialogContent>
@@ -610,6 +650,7 @@ const AddInventoryPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      <ConfirmationPopup />
     </Box>
   );
 };
